@@ -2,11 +2,12 @@
 
 # pip install pywin32
 
-import win32com.client as win32
-from pathlib import Path
-from time import sleep
 from enum import IntEnum
 from os import PathLike
+from pathlib import Path
+from time import sleep
+
+import win32com.client as win32
 
 
 class HwpClearOption(IntEnum):
@@ -19,6 +20,16 @@ class HwpClearOption(IntEnum):
     hwpSaveIfDirty = 2
     # 무조건 저장한다.
     hwpSave = 3
+
+
+_hwp_object = None
+
+
+def get_hwp_object(update=False):
+    global _hwp_object
+    if _hwp_object is None or update:
+        _hwp_object = win32.gencache.EnsureDispatch("hwpframe.hwpobject")
+    return _hwp_object
 
 
 def hwp_save_as_pdf(hwp, hwppath: PathLike, pdfpath: PathLike) -> None:
@@ -57,23 +68,3 @@ def get_hwp_paths(parent: PathLike) -> list[Path]:
             paths.append(child)
 
     return paths
-
-
-parent = "C:\\Users\\USER\Documents\\auri 연구보고서"
-hwppaths = get_hwp_paths(parent)
-
-badfiles = ["[AURI-기본-2013-3] 가로단위 공간관리 수단으로서의 특별가로구역 제도 연구.hwp"]
-
-hwp = win32.gencache.EnsureDispatch("hwpframe.hwpobject")
-for hp in hwppaths:
-    pdfpath = hp.with_suffix(".pdf")
-
-    if hp.name in badfiles:
-        print(hp, "skipped")
-    elif pdfpath.exists():
-        print(pdfpath, "already exists")
-    else:
-        hwp_save_as_pdf(hwp, hp, pdfpath)
-
-sleep(5)
-hwp.Quit()
